@@ -39,57 +39,59 @@ public class QuizGameFrame extends JFrame {
         }
     }
 
-    private boolean loadQuestionsFromDatabase() {
-        String sql = "SELECT question_text, option_a, option_b, option_c, option_d, correct_option " +
-                     "FROM questions " +
-                     "WHERE class_level = ? AND quiz_level = ? " +
-                     "ORDER BY id";
+private boolean loadQuestionsFromDatabase() {
+    String sql = "SELECT question_text, option_a, option_b, option_c, option_d, correct_option " +
+                 "FROM questions " +
+                 "WHERE class_level = ? AND quiz_level = ? " +
+                 "ORDER BY id";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    try (Connection conn = DatabaseConnection.getConnection()) {
+        PreparedStatement stmt = conn.prepareStatement(sql,
+            ResultSet.TYPE_SCROLL_INSENSITIVE,
+            ResultSet.CONCUR_READ_ONLY);
 
-            stmt.setInt(1, className);
-            stmt.setInt(2, level);
+        stmt.setInt(1, className);
+        stmt.setInt(2, level);
 
-            ResultSet rs = stmt.executeQuery();
+        ResultSet rs = stmt.executeQuery();
 
-            // Hitung jumlah soal
-            rs.last();
-            int count = rs.getRow();
-            rs.beforeFirst();
+        // Hitung jumlah soal
+        rs.last();
+        int count = rs.getRow();
+        rs.beforeFirst();
 
-            if (count == 0) return false;
+        if (count == 0) return false;
 
-            // Inisialisasi array
-            questions = new String[count];
-            options = new String[count][4];
-            correctAnswers = new int[count];
+        // Inisialisasi array
+        questions = new String[count];
+        options = new String[count][4];
+        correctAnswers = new int[count];
 
-            int i = 0;
-            while (rs.next()) {
-                questions[i] = rs.getString("question_text");
-                options[i][0] = rs.getString("option_a");
-                options[i][1] = rs.getString("option_b");
-                options[i][2] = rs.getString("option_c");
-                options[i][3] = rs.getString("option_d");
+        int i = 0;
+        while (rs.next()) {
+            questions[i] = rs.getString("question_text");
+            options[i][0] = rs.getString("option_a");
+            options[i][1] = rs.getString("option_b");
+            options[i][2] = rs.getString("option_c");
+            options[i][3] = rs.getString("option_d");
 
-                String correct = rs.getString("correct_option").toUpperCase();
-                correctAnswers[i] = switch (correct) {
-                    case "A" -> 0;
-                    case "B" -> 1;
-                    case "C" -> 2;
-                    case "D" -> 3;
-                    default -> 0;
-                };
-                i++;
-            }
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Gagal memuat soal: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-            return false;
+            String correct = rs.getString("correct_option").toUpperCase();
+            correctAnswers[i] = switch (correct) {
+                case "A" -> 0;
+                case "B" -> 1;
+                case "C" -> 2;
+                case "D" -> 3;
+                default -> 0;
+            };
+            i++;
         }
+        return true;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(this, "Gagal memuat soal: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        return false;
     }
+}
 
     private void displayQuestion() {
         if (currentQuestionIndex >= questions.length) {
