@@ -1,2 +1,9 @@
-# disable target build
+# NetBeans
+nbproject/private/
+
+# Build output
 build/
+dist/
+
+# IDE
+.DS_Store
