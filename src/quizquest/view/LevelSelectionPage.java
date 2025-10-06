@@ -32,7 +32,11 @@ public class LevelSelectionPage extends JFrame {
     }
 
     private void startQuiz(int className, int level) {
-        new QuizGameFrame(className, level, isLoggedIn).setVisible(true);
+        // Ambil username dari session (kamu perlu simpan saat login)
+        // Untuk sementara, kita lewatkan null jika tidak login
+        String username = null; // ← GANTI dengan username sesungguhnya nanti
+
+        new QuizGameFrame(className, level, username).setVisible(true);
         dispose();
     }
 }
