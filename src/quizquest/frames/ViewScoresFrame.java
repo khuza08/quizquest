@@ -23,7 +23,7 @@ public class ViewScoresFrame extends JFrame {
 
         // Model tabel
         tableModel = new DefaultTableModel(
-            new String[]{"ID", "Siswa", "Kelas", "Level", "Skor", "Total", "Persentase", "Tanggal"}, 0
+            new String[]{"ID", "Siswa", "Kelas", "Level", "Skor", "Total", "Tanggal"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -95,7 +95,7 @@ public class ViewScoresFrame extends JFrame {
         tableModel.setRowCount(0); // Kosongkan tabel
 
         StringBuilder sql = new StringBuilder(
-            "SELECT id, username, class_level, quiz_level, score, total_questions, percentage, created_at " +
+            "SELECT id, username, class_level, quiz_level, score, total_questions, created_at " +
             "FROM scores WHERE 1=1"
         );
 
@@ -119,7 +119,6 @@ public class ViewScoresFrame extends JFrame {
                     rs.getInt("quiz_level"),
                     rs.getInt("score"),
                     rs.getInt("total_questions"),
-                    rs.getBigDecimal("percentage") + "%",
                     rs.getTimestamp("created_at").toString().substring(0, 19) // format: yyyy-MM-dd HH:mm:ss
                 };
                 tableModel.addRow(row);
