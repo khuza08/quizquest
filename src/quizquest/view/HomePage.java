@@ -34,12 +34,8 @@ public class HomePage extends JFrame {
         btnLogin.addActionListener(e -> openLoginPage());
         btnStartQuiz.addActionListener(e -> openClassSelectionPage(false));
 
-        showLoadingScreen();
     }
 
-    private void showLoadingScreen() {
-        JOptionPane.showMessageDialog(this, "Loading...", "Please Wait", JOptionPane.INFORMATION_MESSAGE);
-    }
 
     private void openLoginPage() {
         new LoginPage().setVisible(true);
