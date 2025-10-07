@@ -1,4 +1,4 @@
-// File: quizquest.view/ClassSelectionPage.java
+// File: quizquest.view.ClassSelectionPage.java
 package quizquest.view;
 
 import javax.swing.*;
@@ -7,9 +7,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class ClassSelectionPage extends JFrame {
+    private String username; // null jika tidak login
     private JButton btnClass7, btnClass8, btnClass9;
 
-    public ClassSelectionPage(boolean isLoggedIn) {
+    public ClassSelectionPage(String username) {
+        this.username = username;
         setTitle("Pilih Kelas");
         setSize(300, 200);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -27,13 +29,13 @@ public class ClassSelectionPage extends JFrame {
         add(btnClass8);
         add(btnClass9);
 
-        btnClass7.addActionListener(e -> openLevelSelection(7, isLoggedIn));
-        btnClass8.addActionListener(e -> openLevelSelection(8, isLoggedIn));
-        btnClass9.addActionListener(e -> openLevelSelection(9, isLoggedIn));
+        btnClass7.addActionListener(e -> openLevelSelection(7));
+        btnClass8.addActionListener(e -> openLevelSelection(8));
+        btnClass9.addActionListener(e -> openLevelSelection(9));
     }
 
-    private void openLevelSelection(int className, boolean isLoggedIn) {
-        new LevelSelectionPage(className, isLoggedIn).setVisible(true);
+    private void openLevelSelection(int className) {
+        new LevelSelectionPage(className, username).setVisible(true);
         dispose();
     }
 }

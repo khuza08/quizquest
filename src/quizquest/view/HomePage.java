@@ -1,4 +1,4 @@
-// File: quizquest.view/HomePage.java
+// File: quizquest.view.HomePage.java
 package quizquest.view;
 
 import javax.swing.*;
@@ -32,18 +32,16 @@ public class HomePage extends JFrame {
 
         // Event
         btnLogin.addActionListener(e -> openLoginPage());
-        btnStartQuiz.addActionListener(e -> openClassSelectionPage(false));
-
+        btnStartQuiz.addActionListener(e -> openClassSelectionPage(null)); // null = tidak login
     }
-
 
     private void openLoginPage() {
         new LoginPage().setVisible(true);
-        dispose(); // Tutup home page
+        dispose();
     }
 
-    private void openClassSelectionPage(boolean isLoggedIn) {
-        new ClassSelectionPage(isLoggedIn).setVisible(true);
+    private void openClassSelectionPage(String username) {
+        new ClassSelectionPage(username).setVisible(true);
         dispose();
     }
 }
