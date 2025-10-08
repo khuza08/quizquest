@@ -133,7 +133,7 @@ private boolean loadQuestionsFromDatabase() {
             int correctIndex = correctAnswers[currentQuestionIndex];
             String correctText = options[currentQuestionIndex][correctIndex];
             JOptionPane.showMessageDialog(this,
-                "❌ Salah!\nJawaban yang benar: " + ("ABCD".charAt(correctIndex)) + ". " + correctText,
+                "❌ Nguwawor lho ya!\nJawaban yang benar: " + ("ABCD".charAt(correctIndex)) + ". " + correctText,
                 "Jawaban", JOptionPane.WARNING_MESSAGE);
         }
 
