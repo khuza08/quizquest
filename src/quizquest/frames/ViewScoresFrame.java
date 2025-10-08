@@ -23,7 +23,7 @@ public class ViewScoresFrame extends JFrame {
 
         // Model tabel
         tableModel = new DefaultTableModel(
-            new String[]{"ID", "Siswa", "Kelas", "Level", "Skor", "Total", "Tanggal"}, 0
+            new String[]{"ID", "Siswa", "Kelas", "Level", "Benar", "Salah", "Nilai", "Tanggal"}, 0 // ← ganti "Skor", "Total" jadi "Nilai"
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -112,14 +112,21 @@ public class ViewScoresFrame extends JFrame {
              ResultSet rs = stmt.executeQuery(sql.toString())) {
 
             while (rs.next()) {
+                
+                int score = rs.getInt("score");        // jumlah benar
+                int total = rs.getInt("total_questions");
+                int salah = total - score;             // hitung salah
+                int nilai = 100 - (salah * 5);         // setiap salah -5 dari 100
+
                 Object[] row = {
                     rs.getInt("id"),
                     rs.getString("username"),
                     rs.getInt("class_level"),
                     rs.getInt("quiz_level"),
-                    rs.getInt("score"),
-                    rs.getInt("total_questions"),
-                    rs.getTimestamp("created_at").toString().substring(0, 19) // format: yyyy-MM-dd HH:mm:ss
+                    score,          // Benar
+                    salah,          // Salah
+                    nilai,          // Nilai skala 100
+                    rs.getTimestamp("created_at").toString().substring(0, 19)
                 };
                 tableModel.addRow(row);
             }
