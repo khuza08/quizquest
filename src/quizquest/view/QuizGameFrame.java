@@ -154,7 +154,11 @@ private boolean loadQuestionsFromDatabase() {
 
         JOptionPane.showMessageDialog(this, message, "Hasil Kuis", JOptionPane.INFORMATION_MESSAGE);
         dispose();
-        new HomePage().setVisible(true);
+        if (username != null && !username.isEmpty()) {
+            new UserHomePage().setVisible(true);
+        } else {
+            new HomePage().setVisible(true);
+        }
     }
 
     private void saveScoreToDatabase(int score, int total) {
