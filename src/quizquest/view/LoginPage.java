@@ -13,15 +13,15 @@ import java.sql.*;
 public class LoginPage extends JFrame {
     private JTextField txtUsername;
     private JPasswordField txtPassword;
-    private JButton btnLogin;
+    private JButton btnLogin, btnBack;
 
     public LoginPage() {
         setTitle("Login - Quiz Quest");
-        setSize(300, 200);
+        setSize(300, 230); // sedikit diperbesar untuk tombol tambahan
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        setLayout(new GridLayout(4, 1, 10, 10));
+        setLayout(new GridLayout(5, 1, 10, 10)); // ubah jadi 5 baris
 
         add(new JLabel("Username:"));
         txtUsername = new JTextField();
@@ -31,10 +31,21 @@ public class LoginPage extends JFrame {
         txtPassword = new JPasswordField();
         add(txtPassword);
 
+        // Panel untuk tombol Login dan Kembali
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         btnLogin = new JButton("Login");
-        add(btnLogin);
+        btnBack = new JButton("Kembali");
+        
+        buttonPanel.add(btnLogin);
+        buttonPanel.add(btnBack);
+        add(buttonPanel);
 
+        // Event handlers
         btnLogin.addActionListener(e -> validateLogin());
+        btnBack.addActionListener(e -> {
+            dispose();
+            new HomePage().setVisible(true);
+        });
     }
 
     private void validateLogin() {
@@ -58,7 +69,6 @@ public class LoginPage extends JFrame {
                     String dbUsername = rs.getString("username");
                     String role = rs.getString("role");
 
-                    // ✅ SIMPAN USERNAME DARI DATABASE KE SESSION
                     Main.CURRENT_USER = dbUsername;
 
                     JOptionPane.showMessageDialog(this, "Login berhasil sebagai " + role + "!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
