@@ -7,7 +7,6 @@ import quizquest.model.DatabaseConnection;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.*;
 
 public class LoginPage extends JFrame {
@@ -17,11 +16,11 @@ public class LoginPage extends JFrame {
 
     public LoginPage() {
         setTitle("Login - Quiz Quest");
-        setSize(300, 230); // sedikit diperbesar untuk tombol tambahan
+        setSize(300, 230);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        setLayout(new GridLayout(5, 1, 10, 10)); // ubah jadi 5 baris
+        setLayout(new GridLayout(5, 1, 10, 10));
 
         add(new JLabel("Username:"));
         txtUsername = new JTextField();
@@ -31,20 +30,39 @@ public class LoginPage extends JFrame {
         txtPassword = new JPasswordField();
         add(txtPassword);
 
-        // Panel untuk tombol Login dan Kembali
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         btnLogin = new JButton("Login");
         btnBack = new JButton("Kembali");
-        
         buttonPanel.add(btnLogin);
         buttonPanel.add(btnBack);
         add(buttonPanel);
 
-        // Event handlers
+        // Tombol actions
         btnLogin.addActionListener(e -> validateLogin());
         btnBack.addActionListener(e -> {
             dispose();
             new HomePage().setVisible(true);
+        });
+
+        // === Key bindings ===
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(KeyStroke.getKeyStroke("ENTER"), "login");
+        getRootPane().getActionMap().put("login", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                validateLogin();
+            }
+        });
+
+        // Escape, Delete, Backspace → kembali
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(KeyStroke.getKeyStroke("ESCAPE"), "back");
+        getRootPane().getActionMap().put("back", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+                new HomePage().setVisible(true);
+            }
         });
     }
 
