@@ -1,7 +1,9 @@
 // File: quizquest.view.LoginPage.java
 package quizquest.view;
 
+import quizquest.Main;
 import quizquest.model.DatabaseConnection;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -39,52 +41,43 @@ public class LoginPage extends JFrame {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
 
-        // Validasi input kosong
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Username dan password tidak boleh kosong!", "Error", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
+        String sql = "SELECT username, role FROM users WHERE username = ? AND password = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        try {
-            conn = DatabaseConnection.getConnection();
-            String sql = "SELECT role FROM users WHERE username = ? AND password = ?";
-            stmt = conn.prepareStatement(sql);
             stmt.setString(1, username);
             stmt.setString(2, password);
 
-            rs = stmt.executeQuery();
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String dbUsername = rs.getString("username");
+                    String role = rs.getString("role");
 
-            if (rs.next()) {
-                String role = rs.getString("role");
-                JOptionPane.showMessageDialog(this, "Login berhasil sebagai " + role + "!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
+                    // ✅ SIMPAN USERNAME DARI DATABASE KE SESSION
+                    Main.CURRENT_USER = dbUsername;
 
-                if ("admin".equals(role)) {
-                    new AdminDashboard().setVisible(true);
-                } else if ("siswa".equals(role)) {
-                    new UserHomePage().setVisible(true);
+                    JOptionPane.showMessageDialog(this, "Login berhasil sebagai " + role + "!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    dispose();
+
+                    if ("admin".equals(role)) {
+                        new AdminDashboard().setVisible(true);
+                    } else if ("siswa".equals(role)) {
+                        new UserHomePage().setVisible(true);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Role tidak dikenali!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(this, "Role tidak dikenali!", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Username atau password salah!", "Gagal Login", JOptionPane.ERROR_MESSAGE);
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Username atau password salah!", "Gagal Login", JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error koneksi database:\n" + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            // Tutup resource
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
     }
 }

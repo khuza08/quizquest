@@ -15,14 +15,13 @@ public class UserHomePage extends JFrame {
 
         setLayout(new BorderLayout());
 
-        // Header: tampilkan username
+        // Ambil username dari session (pasti tidak null karena hanya dibuka setelah login)
         String username = Main.CURRENT_USER != null ? Main.CURRENT_USER : "Siswa";
         JLabel header = new JLabel("Halo, " + username + "!", JLabel.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 18));
         header.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         add(header, BorderLayout.NORTH);
 
-        // Panel tombol
         JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 15, 15));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
@@ -36,19 +35,17 @@ public class UserHomePage extends JFrame {
 
         add(buttonPanel, BorderLayout.CENTER);
 
-        // Event handlers
         btnStartQuiz.addActionListener(e -> {
             dispose();
-            new ClassSelectionPage(Main.CURRENT_USER).setVisible(true); // kirim username
+            new ClassSelectionPage(Main.CURRENT_USER).setVisible(true);
         });
 
         btnViewHistory.addActionListener(e -> {
             JOptionPane.showMessageDialog(this, "Fitur history nilai akan segera hadir!", "Info", JOptionPane.INFORMATION_MESSAGE);
-            // Nanti ganti dengan: new ViewUserScoresFrame().setVisible(true);
         });
 
         btnLogout.addActionListener(e -> {
-            Main.CURRENT_USER = null; // Hapus sesi
+            Main.CURRENT_USER = null;
             dispose();
             new HomePage().setVisible(true);
         });
