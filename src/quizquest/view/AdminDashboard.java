@@ -11,7 +11,7 @@ public class AdminDashboard extends JFrame {
     public AdminDashboard() {
         setTitle("Admin Dashboard - Quiz Quest");
         setSize(600, 400);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);        
         setLocationRelativeTo(null);
 
         setLayout(new GridLayout(4, 1, 10, 10));
@@ -31,7 +31,12 @@ public class AdminDashboard extends JFrame {
         btnManageQuestions.addActionListener(e -> new ManageQuestionsFrame().setVisible(true));
         btnViewScores.addActionListener(e -> new ViewScoresFrame().setVisible(true));
         btnLogout.addActionListener(e -> {
-            dispose();
+            // Tutup SEMUA window
+            Window[] windows = Window.getWindows();
+            for (Window window : windows) {
+                window.dispose();
+            }
+            // Buka login
             new HomePage().setVisible(true);
         });
     }
