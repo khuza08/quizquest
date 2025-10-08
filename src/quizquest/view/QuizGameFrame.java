@@ -143,9 +143,10 @@ private boolean loadQuestionsFromDatabase() {
 
     private void showResult() {
         int total = questions.length;
-        double percentage = (double) score / total * 100;
-        String message = String.format("Skor Akhir:\n%d / %d (%.1f%%)", score, total, percentage);
-
+        int salah = total - score;
+        int nilai = 100 - (salah * 5); // setiap salah -5 dari 100
+        String message = String.format("Skor Akhir:\nBenar: %d\nSalah: %d\nNilai: %d", score, salah, nilai);
+        
         // Simpan ke database jika user login
         if (username != null && !username.isEmpty()) {
             saveScoreToDatabase(score, total);
