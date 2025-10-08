@@ -15,7 +15,7 @@ public class ManageUsersFrame extends JFrame {
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtUsername;
-    private JPasswordField txtPassword; // ✅ DIPERBAIKI: bukan JTextField!
+    private JTextField txtPassword; // ✅ DIUBAH: JPasswordField → JTextField
     private JButton btnAdd, btnUpdate, btnDelete, btnRefresh, btnBack;
     private int selectedUserId = -1;
 
@@ -29,7 +29,7 @@ public class ManageUsersFrame extends JFrame {
         tableModel = new DefaultTableModel(new String[]{"ID", "Username", "Password", "Role"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Tabel hanya baca
+                return false;
             }
         };
         table = new JTable(tableModel);
@@ -42,7 +42,7 @@ public class ManageUsersFrame extends JFrame {
                     String username = (String) table.getValueAt(selectedRow, 1);
                     String password = (String) table.getValueAt(selectedRow, 2);
                     txtUsername.setText(username);
-                    txtPassword.setText(password); // setText() tetap bisa dipakai
+                    txtPassword.setText(password); // ✅ Sekarang pakai JTextField
                     btnUpdate.setEnabled(true);
                     btnDelete.setEnabled(true);
                 }
@@ -58,7 +58,7 @@ public class ManageUsersFrame extends JFrame {
         inputPanel.add(txtUsername);
 
         inputPanel.add(new JLabel("Password:"));
-        txtPassword = new JPasswordField(); // ✅ Sudah benar di sini
+        txtPassword = new JTextField(); // ✅ DIUBAH: JPasswordField → JTextField
         inputPanel.add(txtPassword);
 
         // Button panel
@@ -94,12 +94,11 @@ public class ManageUsersFrame extends JFrame {
             new AdminDashboard().setVisible(true);
         });
 
-        // Muat data awal
         loadUsers();
     }
 
     private void loadUsers() {
-        tableModel.setRowCount(0); // Kosongkan tabel
+        tableModel.setRowCount(0);
         String sql = "SELECT id, username, password, role FROM users WHERE role = 'siswa'";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -121,7 +120,7 @@ public class ManageUsersFrame extends JFrame {
 
     private void addUser() {
         String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim(); // ✅ Sekarang aman
+        String password = txtPassword.getText().trim(); // ✅ Pakai .getText() karena JTextField
 
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Username dan password tidak boleh kosong!", "Validasi", JOptionPane.WARNING_MESSAGE);
@@ -140,7 +139,7 @@ public class ManageUsersFrame extends JFrame {
             clearForm();
             loadUsers();
         } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) { // Duplicate entry
+            if (e.getErrorCode() == 1062) {
                 JOptionPane.showMessageDialog(this, "Username sudah digunakan!", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 e.printStackTrace();
@@ -153,7 +152,7 @@ public class ManageUsersFrame extends JFrame {
         if (selectedUserId == -1) return;
 
         String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim(); // ✅ Aman
+        String password = txtPassword.getText().trim(); // ✅ .getText()
 
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Username dan password tidak boleh kosong!", "Validasi", JOptionPane.WARNING_MESSAGE);
@@ -212,7 +211,7 @@ public class ManageUsersFrame extends JFrame {
 
     private void clearForm() {
         txtUsername.setText("");
-        txtPassword.setText(""); // Bisa pakai setText("") untuk reset
+        txtPassword.setText(""); // ✅ JTextField bisa pakai setText("")
         selectedUserId = -1;
         btnUpdate.setEnabled(false);
         btnDelete.setEnabled(false);
