@@ -140,10 +140,7 @@ public class ManageQuestionsFrame extends JFrame {
         btnUpdate.addActionListener(e -> updateQuestion());
         btnDelete.addActionListener(e -> deleteQuestion());
         btnClear.addActionListener(e -> clearForm());
-        btnBack.addActionListener(e -> {
-            dispose();
-            new AdminDashboard().setVisible(true);
-        });
+        btnBack.addActionListener(e -> dispose());
 
         // Muat semua soal
         loadAllQuestions();

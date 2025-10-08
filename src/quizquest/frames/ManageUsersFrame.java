@@ -89,10 +89,7 @@ public class ManageUsersFrame extends JFrame {
         btnUpdate.addActionListener(e -> updateUser());
         btnDelete.addActionListener(e -> deleteUser());
         btnRefresh.addActionListener(e -> loadUsers());
-        btnBack.addActionListener(e -> {
-            dispose();
-            new AdminDashboard().setVisible(true);
-        });
+        btnBack.addActionListener(e -> dispose());
 
         loadUsers();
     }

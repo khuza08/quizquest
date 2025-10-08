@@ -64,10 +64,7 @@ public class ViewScoresFrame extends JFrame {
         // Event handlers
         btnFilter.addActionListener(e -> loadScoresWithFilter());
         btnRefresh.addActionListener(e -> loadAllScores());
-        btnBack.addActionListener(e -> {
-            dispose();
-            new AdminDashboard().setVisible(true);
-        });
+        btnBack.addActionListener(e -> dispose());
 
         // Muat semua data awal
         loadAllScores();
