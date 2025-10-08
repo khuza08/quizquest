@@ -1,7 +1,8 @@
-// File: quizquest.view.UserHomePage.java
+// quizquest.view.UserHomePage.java
 package quizquest.view;
 
 import quizquest.Main;
+import quizquest.frames.ViewMyScoresFrame;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,7 +16,6 @@ public class UserHomePage extends JFrame {
 
         setLayout(new BorderLayout());
 
-        // Ambil username dari session (pasti tidak null karena hanya dibuka setelah login)
         String username = Main.CURRENT_USER != null ? Main.CURRENT_USER : "Siswa";
         JLabel header = new JLabel("Halo, " + username + "!", JLabel.CENTER);
         header.setFont(new Font("Arial", Font.BOLD, 18));
@@ -41,7 +41,8 @@ public class UserHomePage extends JFrame {
         });
 
         btnViewHistory.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Fitur history nilai akan segera hadir!", "Info", JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+            new ViewMyScoresFrame(Main.CURRENT_USER).setVisible(true);
         });
 
         btnLogout.addActionListener(e -> {
