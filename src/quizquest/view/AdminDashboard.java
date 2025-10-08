@@ -31,13 +31,22 @@ public class AdminDashboard extends JFrame {
         btnManageQuestions.addActionListener(e -> new ManageQuestionsFrame().setVisible(true));
         btnViewScores.addActionListener(e -> new ViewScoresFrame().setVisible(true));
         btnLogout.addActionListener(e -> {
-            // Tutup SEMUA window
-            Window[] windows = Window.getWindows();
-            for (Window window : windows) {
-                window.dispose();
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Apakah Anda yakin ingin logout?",
+                "Konfirmasi Logout",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Tutup SEMUA window
+                Window[] windows = Window.getWindows();
+                for (Window window : windows) {
+                    window.dispose();
+                }
+                // Buka login
+                new HomePage().setVisible(true);
             }
-            // Buka login
-            new HomePage().setVisible(true);
         });
     }
 }
