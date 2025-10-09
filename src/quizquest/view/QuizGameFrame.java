@@ -1,4 +1,4 @@
-// File: quizquest.view.QuizGameFrame.java
+// File: quizquest/view/QuizGameFrame.java
 package quizquest.view;
 
 import quizquest.model.DatabaseConnection;
@@ -6,7 +6,6 @@ import quizquest.model.DatabaseConnection;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.*;
 
 public class QuizGameFrame extends JFrame {
@@ -19,6 +18,7 @@ public class QuizGameFrame extends JFrame {
     private String[] questions;
     private String[][] options;
     private int[] correctAnswers; // 0=A, 1=B, 2=C, 3=D
+    private String[] imagePaths;  // ← tambahan: path gambar per soal
 
     public QuizGameFrame(int className, int level, String username) {
         this.className = className;
@@ -26,7 +26,7 @@ public class QuizGameFrame extends JFrame {
         this.username = username;
 
         setTitle("Kuis Kelas " + className + " - Level " + level);
-        setSize(600, 400);
+        setSize(650, 500); // sedikit diperbesar agar muat gambar
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -39,59 +39,64 @@ public class QuizGameFrame extends JFrame {
         }
     }
 
-private boolean loadQuestionsFromDatabase() {
-    String sql = "SELECT question_text, option_a, option_b, option_c, option_d, correct_option " +
-                 "FROM questions " +
-                 "WHERE class_level = ? AND quiz_level = ? " +
-                 "ORDER BY id";
+    private boolean loadQuestionsFromDatabase() {
+        // ← tambahkan image_path di SELECT
+        String sql = """
+            SELECT question_text, option_a, option_b, option_c, option_d, 
+                   correct_option, image_path
+            FROM questions 
+            WHERE class_level = ? AND quiz_level = ? 
+            ORDER BY id
+            """;
 
-    try (Connection conn = DatabaseConnection.getConnection()) {
-        PreparedStatement stmt = conn.prepareStatement(sql,
-            ResultSet.TYPE_SCROLL_INSENSITIVE,
-            ResultSet.CONCUR_READ_ONLY);
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(sql,
+                ResultSet.TYPE_SCROLL_INSENSITIVE,
+                ResultSet.CONCUR_READ_ONLY);
 
-        stmt.setInt(1, className);
-        stmt.setInt(2, level);
+            stmt.setInt(1, className);
+            stmt.setInt(2, level);
 
-        ResultSet rs = stmt.executeQuery();
+            ResultSet rs = stmt.executeQuery();
 
-        // Hitung jumlah soal
-        rs.last();
-        int count = rs.getRow();
-        rs.beforeFirst();
+            rs.last();
+            int count = rs.getRow();
+            rs.beforeFirst();
 
-        if (count == 0) return false;
+            if (count == 0) return false;
 
-        // Inisialisasi array
-        questions = new String[count];
-        options = new String[count][4];
-        correctAnswers = new int[count];
+            questions = new String[count];
+            options = new String[count][4];
+            correctAnswers = new int[count];
+            imagePaths = new String[count]; // ← inisialisasi
 
-        int i = 0;
-        while (rs.next()) {
-            questions[i] = rs.getString("question_text");
-            options[i][0] = rs.getString("option_a");
-            options[i][1] = rs.getString("option_b");
-            options[i][2] = rs.getString("option_c");
-            options[i][3] = rs.getString("option_d");
+            int i = 0;
+            while (rs.next()) {
+                questions[i] = rs.getString("question_text");
+                options[i][0] = rs.getString("option_a");
+                options[i][1] = rs.getString("option_b");
+                options[i][2] = rs.getString("option_c");
+                options[i][3] = rs.getString("option_d");
 
-            String correct = rs.getString("correct_option").toUpperCase();
-            correctAnswers[i] = switch (correct) {
-                case "A" -> 0;
-                case "B" -> 1;
-                case "C" -> 2;
-                case "D" -> 3;
-                default -> 0;
-            };
-            i++;
+                String correct = rs.getString("correct_option").toUpperCase();
+                correctAnswers[i] = switch (correct) {
+                    case "A" -> 0;
+                    case "B" -> 1;
+                    case "C" -> 2;
+                    case "D" -> 3;
+                    default -> 0;
+                };
+
+                imagePaths[i] = rs.getString("image_path"); // ← simpan path
+                i++;
+            }
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memuat soal: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            return false;
         }
-        return true;
-    } catch (SQLException e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(this, "Gagal memuat soal: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-        return false;
     }
-}
 
     private void displayQuestion() {
         if (currentQuestionIndex >= questions.length) {
@@ -102,11 +107,28 @@ private boolean loadQuestionsFromDatabase() {
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
+        // Tampilkan gambar jika ada
+        if (imagePaths[currentQuestionIndex] != null && !imagePaths[currentQuestionIndex].trim().isEmpty()) {
+            try {
+                ImageIcon originalIcon = new ImageIcon(imagePaths[currentQuestionIndex]);
+                Image scaledImage = originalIcon.getImage().getScaledInstance(200, 150, Image.SCALE_SMOOTH);
+                JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
+                imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                add(imageLabel, BorderLayout.NORTH);
+            } catch (Exception e) {
+                System.err.println("Gagal memuat gambar: " + imagePaths[currentQuestionIndex]);
+                // Lanjut tanpa gambar
+            }
+        }
+
+        // Tampilkan pertanyaan
         JLabel questionLabel = new JLabel((currentQuestionIndex + 1) + ". " + questions[currentQuestionIndex]);
         questionLabel.setFont(new Font("Arial", Font.BOLD, 16));
         questionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(questionLabel, BorderLayout.NORTH);
+        add(questionLabel, BorderLayout.CENTER);
 
+        // Opsi jawaban
         JPanel optionsPanel = new JPanel(new GridLayout(4, 1, 5, 5));
         optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
@@ -120,7 +142,7 @@ private boolean loadQuestionsFromDatabase() {
             optionsPanel.add(optionBtn);
         }
 
-        add(optionsPanel, BorderLayout.CENTER);
+        add(optionsPanel, BorderLayout.SOUTH);
         revalidate();
         repaint();
     }
@@ -144,10 +166,9 @@ private boolean loadQuestionsFromDatabase() {
     private void showResult() {
         int total = questions.length;
         int salah = total - score;
-        int nilai = 100 - (salah * 5); // setiap salah -5 dari 100
+        int nilai = 100 - (salah * 5);
         String message = String.format("Skor Akhir:\nBenar: %d\nSalah: %d\nNilai: %d", score, salah, nilai);
         
-        // Simpan ke database jika user login
         if (username != null && !username.isEmpty()) {
             saveScoreToDatabase(score, total);
             message += "\n\n✅ Nilai telah disimpan!";
@@ -181,7 +202,7 @@ private boolean loadQuestionsFromDatabase() {
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            // Jangan tampilkan error ke user — cukup log
+            // silent fail
         }
     }
 }

@@ -17,6 +17,8 @@ public class ManageQuestionsFrame extends JFrame {
     private JTextField txtQuestion, txtOptA, txtOptB, txtOptC, txtOptD;
     private JComboBox<String> comboClass, comboLevel, comboCorrect;
     private JButton btnAdd, btnUpdate, btnDelete, btnFilter, btnClear, btnBack;
+    private JTextField txtImagePath;
+    private JButton btnBrowseImage;
     private int selectedQuestionId = -1;
 
     public ManageQuestionsFrame() {
@@ -60,6 +62,19 @@ public class ManageQuestionsFrame extends JFrame {
         txtQuestion = new JTextField(30);
         formPanel.add(txtQuestion, gbc);
 
+        
+        // Gambar
+        gbc.gridx = 0; gbc.gridy = 8;
+        formPanel.add(new JLabel("Gambar:"), gbc);
+        gbc.gridx = 1;
+        JPanel imagePanel = new JPanel(new BorderLayout());
+        txtImagePath = new JTextField();
+        btnBrowseImage = new JButton("...");
+        btnBrowseImage.addActionListener(e -> browseImage());
+        imagePanel.add(txtImagePath, BorderLayout.CENTER);
+        imagePanel.add(btnBrowseImage, BorderLayout.EAST);
+        formPanel.add(imagePanel, gbc);
+        
         // Opsi A
         gbc.gridx = 0; gbc.gridy = 1;
         formPanel.add(new JLabel("Opsi A:"), gbc);
@@ -184,6 +199,7 @@ public class ManageQuestionsFrame extends JFrame {
         comboCorrect.setSelectedItem(table.getValueAt(row, 6));
         comboClass.setSelectedItem(String.valueOf(table.getValueAt(row, 7)));
         comboLevel.setSelectedItem(String.valueOf(table.getValueAt(row, 8)));
+        txtImagePath.setText(table.getValueAt(row, 9) != null ? table.getValueAt(row, 9).toString() : "");
 
         btnUpdate.setEnabled(true);
         btnDelete.setEnabled(true);
@@ -194,8 +210,8 @@ public class ManageQuestionsFrame extends JFrame {
 
         String sql = """
             INSERT INTO questions 
-            (question_text, option_a, option_b, option_c, option_d, correct_option, class_level, quiz_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (question_text, option_a, option_b, option_c, option_d, correct_option, class_level, quiz_level, image_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -209,6 +225,7 @@ public class ManageQuestionsFrame extends JFrame {
             stmt.setString(6, (String) comboCorrect.getSelectedItem());
             stmt.setInt(7, Integer.parseInt((String) comboClass.getSelectedItem()));
             stmt.setInt(8, Integer.parseInt((String) comboLevel.getSelectedItem()));
+            stmt.setString(9, txtImagePath.getText().trim());
 
             stmt.executeUpdate();
             JOptionPane.showMessageDialog(this, "Soal berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
@@ -226,7 +243,7 @@ public class ManageQuestionsFrame extends JFrame {
         String sql = """
             UPDATE questions SET
             question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?,
-            correct_option = ?, class_level = ?, quiz_level = ?
+            correct_option = ?, class_level = ?, quiz_level = ?, image_path = ?
             WHERE id = ?
             """;
 
@@ -241,6 +258,7 @@ public class ManageQuestionsFrame extends JFrame {
             stmt.setString(6, (String) comboCorrect.getSelectedItem());
             stmt.setInt(7, Integer.parseInt((String) comboClass.getSelectedItem()));
             stmt.setInt(8, Integer.parseInt((String) comboLevel.getSelectedItem()));
+            stmt.setString(9, txtImagePath.getText().trim()); 
             stmt.setInt(9, selectedQuestionId);
 
             stmt.executeUpdate();
@@ -277,6 +295,31 @@ public class ManageQuestionsFrame extends JFrame {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Gagal hapus soal: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+    
+    private void browseImage() {
+    JFileChooser chooser = new JFileChooser();
+    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+    chooser.setDialogTitle("Pilih Gambar");
+    chooser.setAcceptAllFileFilterUsed(false);
+    chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+        @Override
+        public boolean accept(java.io.File f) {
+            if (f.isDirectory()) return true;
+            String name = f.getName().toLowerCase();
+            return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif");
+        }
+
+        @Override
+        public String getDescription() {
+            return "Image Files (*.jpg, *.jpeg, *.png, *.gif)";
+        }
+    });
+
+    int result = chooser.showOpenDialog(this);
+    if (result == JFileChooser.APPROVE_OPTION) {
+        txtImagePath.setText(chooser.getSelectedFile().getAbsolutePath());
         }
     }
 
