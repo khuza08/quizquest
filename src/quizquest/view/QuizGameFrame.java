@@ -7,35 +7,102 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.sql.*;
+import java.util.*;
 
 public class QuizGameFrame extends JFrame {
+    private static final Set<String> completedCategories = new HashSet<>(); // ← simpan kategori yang sudah dimainkan
+    private static int lastClass = -1;
+    private static int lastLevel = -1;
+
     private int className, level;
-    private String username; // null jika tidak login
+    private String username;
     private int currentQuestionIndex = 0;
     private int score = 0;
+    private String selectedCategory;
 
-    // Data soal dari database
     private String[] questions;
     private String[][] options;
-    private int[] correctAnswers; // 0=A, 1=B, 2=C, 3=D
-    private byte[][] imageDatas;  // ← BLOB gambar per soal
+    private int[] correctAnswers;
+    private byte[][] imageDatas;
 
     public QuizGameFrame(int className, int level, String username) {
         this.className = className;
         this.level = level;
         this.username = username;
 
+        // Reset daftar jika kelas/level berbeda
+        if (lastClass != className || lastLevel != level) {
+            completedCategories.clear();
+            lastClass = className;
+            lastLevel = level;
+        }
+
         setTitle("Kuis Kelas " + className + " - Level " + level);
         setSize(650, 500);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        selectedCategory = selectRandomCategory();
+        if (selectedCategory == null) {
+            JOptionPane.showMessageDialog(this, "Tidak ada soal tersisa untuk kelas " + className + " level " + level, "Error", JOptionPane.ERROR_MESSAGE);
+            dispose();
+            navigateBack();
+            return;
+        }
+
+        setTitle("Kuis [" + selectedCategory + "] - Kelas " + className + " Level " + level);
+
         if (loadQuestionsFromDatabase()) {
             displayQuestion();
         } else {
-            JOptionPane.showMessageDialog(this, "Tidak ada soal untuk kelas " + className + " level " + level, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Tidak ada soal untuk kategori '" + selectedCategory + "'", "Error", JOptionPane.ERROR_MESSAGE);
             dispose();
-            new HomePage().setVisible(true);
+            navigateBack();
+        }
+    }
+
+    private String selectRandomCategory() {
+        String sql = """
+            SELECT DISTINCT category 
+            FROM questions 
+            WHERE class_level = ? AND quiz_level = ?
+            """;
+
+        java.util.List<String> availableCategories = new java.util.ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, className);
+            stmt.setInt(2, level);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                String cat = rs.getString("category");
+                if (!completedCategories.contains(cat)) {
+                    availableCategories.add(cat);
+                }
+            }
+
+            if (availableCategories.isEmpty()) {
+                // Jika semua kategori sudah dimainkan, reset
+                completedCategories.clear();
+                // Ambil ulang semua kategori
+                rs.beforeFirst();
+                while (rs.next()) {
+                    availableCategories.add(rs.getString("category"));
+                }
+                if (availableCategories.isEmpty()) return null;
+            }
+
+            // Pilih acak
+            Collections.shuffle(availableCategories, new Random());
+            return availableCategories.get(0);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Gagal memuat kategori: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return null;
         }
     }
 
@@ -44,7 +111,7 @@ public class QuizGameFrame extends JFrame {
             SELECT question_text, option_a, option_b, option_c, option_d, 
                    correct_option, image_data
             FROM questions 
-            WHERE class_level = ? AND quiz_level = ? 
+            WHERE class_level = ? AND quiz_level = ? AND category = ?
             ORDER BY id
             """;
 
@@ -55,6 +122,7 @@ public class QuizGameFrame extends JFrame {
 
             stmt.setInt(1, className);
             stmt.setInt(2, level);
+            stmt.setString(3, selectedCategory);
 
             ResultSet rs = stmt.executeQuery();
 
@@ -67,7 +135,7 @@ public class QuizGameFrame extends JFrame {
             questions = new String[count];
             options = new String[count][4];
             correctAnswers = new int[count];
-            imageDatas = new byte[count][]; // ← inisialisasi
+            imageDatas = new byte[count][];
 
             int i = 0;
             while (rs.next()) {
@@ -86,7 +154,7 @@ public class QuizGameFrame extends JFrame {
                     default -> 0;
                 };
 
-                imageDatas[i] = rs.getBytes("image_data"); // ← simpan BLOB
+                imageDatas[i] = rs.getBytes("image_data");
                 i++;
             }
             return true;
@@ -99,6 +167,8 @@ public class QuizGameFrame extends JFrame {
 
     private void displayQuestion() {
         if (currentQuestionIndex >= questions.length) {
+            // Tandai kategori sebagai selesai
+            completedCategories.add(selectedCategory);
             showResult();
             return;
         }
@@ -106,7 +176,12 @@ public class QuizGameFrame extends JFrame {
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
-        // Tampilkan gambar jika ada
+        JLabel categoryLabel = new JLabel("Kategori: " + selectedCategory);
+        categoryLabel.setFont(new Font("Arial", Font.ITALIC, 12));
+        categoryLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        categoryLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        add(categoryLabel, BorderLayout.NORTH);
+
         if (imageDatas[currentQuestionIndex] != null && imageDatas[currentQuestionIndex].length > 0) {
             try {
                 ImageIcon originalIcon = new ImageIcon(imageDatas[currentQuestionIndex]);
@@ -114,20 +189,17 @@ public class QuizGameFrame extends JFrame {
                 JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
                 imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
                 imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                add(imageLabel, BorderLayout.NORTH);
+                add(imageLabel, BorderLayout.CENTER);
             } catch (Exception e) {
                 System.err.println("Gagal muat gambar dari BLOB: " + e.getMessage());
-                // lanjut tanpa gambar
             }
         }
 
-        // Tampilkan pertanyaan
         JLabel questionLabel = new JLabel((currentQuestionIndex + 1) + ". " + questions[currentQuestionIndex]);
         questionLabel.setFont(new Font("Arial", Font.BOLD, 16));
         questionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(questionLabel, BorderLayout.CENTER);
+        add(questionLabel, BorderLayout.SOUTH);
 
-        // Opsi jawaban
         JPanel optionsPanel = new JPanel(new GridLayout(4, 1, 5, 5));
         optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
@@ -141,7 +213,7 @@ public class QuizGameFrame extends JFrame {
             optionsPanel.add(optionBtn);
         }
 
-        add(optionsPanel, BorderLayout.SOUTH);
+        add(optionsPanel, BorderLayout.EAST);
         revalidate();
         repaint();
     }
@@ -166,8 +238,11 @@ public class QuizGameFrame extends JFrame {
         int total = questions.length;
         int salah = total - score;
         int nilai = 100 - (salah * 5);
-        String message = String.format("Skor Akhir:\nBenar: %d\nSalah: %d\nNilai: %d", score, salah, nilai);
-        
+        String message = String.format(
+            "Kategori: %s\nSkor Akhir:\nBenar: %d\nSalah: %d\nNilai: %d",
+            selectedCategory, score, salah, nilai
+        );
+
         if (username != null && !username.isEmpty()) {
             saveScoreToDatabase(score, total);
             message += "\n\n✅ Nilai telah disimpan!";
@@ -175,17 +250,13 @@ public class QuizGameFrame extends JFrame {
 
         JOptionPane.showMessageDialog(this, message, "Hasil Kuis", JOptionPane.INFORMATION_MESSAGE);
         dispose();
-        if (username != null && !username.isEmpty()) {
-            new UserHomePage().setVisible(true);
-        } else {
-            new HomePage().setVisible(true);
-        }
+        navigateBack();
     }
 
     private void saveScoreToDatabase(int score, int total) {
         String sql = """
-            INSERT INTO scores (user_id, username, class_level, quiz_level, score, total_questions)
-            SELECT id, ?, ?, ?, ?, ?
+            INSERT INTO scores (user_id, username, class_level, quiz_level, score, total_questions, category)
+            SELECT id, ?, ?, ?, ?, ?, ?
             FROM users WHERE username = ?
             """;
 
@@ -197,10 +268,19 @@ public class QuizGameFrame extends JFrame {
             stmt.setInt(3, level);
             stmt.setInt(4, score);
             stmt.setInt(5, total);
-            stmt.setString(6, username);
+            stmt.setString(6, selectedCategory);
+            stmt.setString(7, username);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void navigateBack() {
+        if (username != null && !username.isEmpty()) {
+            new UserHomePage().setVisible(true);
+        } else {
+            new HomePage().setVisible(true);
         }
     }
 }
