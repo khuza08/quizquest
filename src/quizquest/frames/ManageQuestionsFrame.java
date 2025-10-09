@@ -19,6 +19,7 @@ public class ManageQuestionsFrame extends JFrame {
     private JButton btnAdd, btnUpdate, btnDelete, btnFilter, btnClear, btnBack;
     private JTextField txtImagePath;
     private JButton btnBrowseImage;
+    private byte[] currentImageData = null; // simpan byte array gambar
     private int selectedQuestionId = -1;
 
     public ManageQuestionsFrame() {
@@ -27,15 +28,16 @@ public class ManageQuestionsFrame extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Model tabel
+        // tabel model pertanyaan
         tableModel = new DefaultTableModel(
-            new String[]{"ID", "Pertanyaan", "A", "B", "C", "D", "Jawaban", "Kelas", "Level"}, 0
+            new String[]{"ID", "Pertanyaan", "A", "B", "C", "D", "Jawaban", "Kelas", "Level", "Gambar"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
+        
         table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> {
@@ -62,17 +64,14 @@ public class ManageQuestionsFrame extends JFrame {
         txtQuestion = new JTextField(30);
         formPanel.add(txtQuestion, gbc);
 
-        
         // Gambar
         gbc.gridx = 0; gbc.gridy = 8;
         formPanel.add(new JLabel("Gambar:"), gbc);
         gbc.gridx = 1;
         JPanel imagePanel = new JPanel(new BorderLayout());
-        txtImagePath = new JTextField();
-        btnBrowseImage = new JButton("...");
+        btnBrowseImage = new JButton("Pilih Gambar");
         btnBrowseImage.addActionListener(e -> browseImage());
-        imagePanel.add(txtImagePath, BorderLayout.CENTER);
-        imagePanel.add(btnBrowseImage, BorderLayout.EAST);
+        imagePanel.add(btnBrowseImage, BorderLayout.CENTER);
         formPanel.add(imagePanel, gbc);
         
         // Opsi A
@@ -179,7 +178,8 @@ public class ManageQuestionsFrame extends JFrame {
                     rs.getString("option_d"),
                     rs.getString("correct_option"),
                     rs.getInt("class_level"),
-                    rs.getInt("quiz_level")
+                    rs.getInt("quiz_level"),
+                    rs.getBytes("image_data")
                 };
                 tableModel.addRow(row);
             }
@@ -199,8 +199,16 @@ public class ManageQuestionsFrame extends JFrame {
         comboCorrect.setSelectedItem(table.getValueAt(row, 6));
         comboClass.setSelectedItem(String.valueOf(table.getValueAt(row, 7)));
         comboLevel.setSelectedItem(String.valueOf(table.getValueAt(row, 8)));
-        txtImagePath.setText(table.getValueAt(row, 9) != null ? table.getValueAt(row, 9).toString() : "");
-
+        
+        // Ambil byte array dari DB
+        byte[] imageData = (byte[]) table.getValueAt(row, 9); // kolom ke-9 adalah image_data
+        if (imageData != null && imageData.length > 0) {
+            currentImageData = imageData;
+            btnBrowseImage.setText("✅ Gambar tersedia");
+        } else {
+            currentImageData = null;
+            btnBrowseImage.setText("Pilih Gambar");
+        }
         btnUpdate.setEnabled(true);
         btnDelete.setEnabled(true);
     }
@@ -210,7 +218,7 @@ public class ManageQuestionsFrame extends JFrame {
 
         String sql = """
             INSERT INTO questions 
-            (question_text, option_a, option_b, option_c, option_d, correct_option, class_level, quiz_level, image_path)
+            (question_text, option_a, option_b, option_c, option_d, correct_option, class_level, quiz_level, image_data)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -225,8 +233,8 @@ public class ManageQuestionsFrame extends JFrame {
             stmt.setString(6, (String) comboCorrect.getSelectedItem());
             stmt.setInt(7, Integer.parseInt((String) comboClass.getSelectedItem()));
             stmt.setInt(8, Integer.parseInt((String) comboLevel.getSelectedItem()));
-            stmt.setString(9, txtImagePath.getText().trim());
-
+            stmt.setBytes(9, currentImageData);
+            
             stmt.executeUpdate();
             JOptionPane.showMessageDialog(this, "Soal berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
             clearForm();
@@ -243,7 +251,7 @@ public class ManageQuestionsFrame extends JFrame {
         String sql = """
             UPDATE questions SET
             question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?,
-            correct_option = ?, class_level = ?, quiz_level = ?, image_path = ?
+            correct_option = ?, class_level = ?, quiz_level = ?, image_data = ?
             WHERE id = ?
             """;
 
@@ -258,7 +266,7 @@ public class ManageQuestionsFrame extends JFrame {
             stmt.setString(6, (String) comboCorrect.getSelectedItem());
             stmt.setInt(7, Integer.parseInt((String) comboClass.getSelectedItem()));
             stmt.setInt(8, Integer.parseInt((String) comboLevel.getSelectedItem()));
-            stmt.setString(9, txtImagePath.getText().trim()); 
+            stmt.setBytes(9, currentImageData);
             stmt.setInt(9, selectedQuestionId);
 
             stmt.executeUpdate();
@@ -299,27 +307,35 @@ public class ManageQuestionsFrame extends JFrame {
     }
     
     private void browseImage() {
-    JFileChooser chooser = new JFileChooser();
-    chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    chooser.setDialogTitle("Pilih Gambar");
-    chooser.setAcceptAllFileFilterUsed(false);
-    chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
-        @Override
-        public boolean accept(java.io.File f) {
-            if (f.isDirectory()) return true;
-            String name = f.getName().toLowerCase();
-            return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif");
-        }
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setDialogTitle("Pilih Gambar");
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(java.io.File f) {
+                if (f.isDirectory()) return true;
+                String name = f.getName().toLowerCase();
+                return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif");
+            }
 
-        @Override
-        public String getDescription() {
-            return "Image Files (*.jpg, *.jpeg, *.png, *.gif)";
-        }
-    });
+            @Override
+            public String getDescription() {
+                return "Image Files (*.jpg, *.jpeg, *.png, *.gif)";
+            }
+        });
 
-    int result = chooser.showOpenDialog(this);
-    if (result == JFileChooser.APPROVE_OPTION) {
-        txtImagePath.setText(chooser.getSelectedFile().getAbsolutePath());
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                java.io.File file = chooser.getSelectedFile();
+                currentImageData = java.nio.file.Files.readAllBytes(file.toPath());
+                btnBrowseImage.setText("✅ Gambar dipilih");
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Gagal baca gambar: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                currentImageData = null;
+                btnBrowseImage.setText("Pilih Gambar");
+            }
         }
     }
 

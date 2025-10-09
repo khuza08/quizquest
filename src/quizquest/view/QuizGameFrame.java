@@ -18,7 +18,7 @@ public class QuizGameFrame extends JFrame {
     private String[] questions;
     private String[][] options;
     private int[] correctAnswers; // 0=A, 1=B, 2=C, 3=D
-    private String[] imagePaths;  // ← tambahan: path gambar per soal
+    private byte[][] imageDatas;  // ← BLOB gambar per soal
 
     public QuizGameFrame(int className, int level, String username) {
         this.className = className;
@@ -26,7 +26,7 @@ public class QuizGameFrame extends JFrame {
         this.username = username;
 
         setTitle("Kuis Kelas " + className + " - Level " + level);
-        setSize(650, 500); // sedikit diperbesar agar muat gambar
+        setSize(650, 500);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -40,10 +40,9 @@ public class QuizGameFrame extends JFrame {
     }
 
     private boolean loadQuestionsFromDatabase() {
-        // ← tambahkan image_path di SELECT
         String sql = """
             SELECT question_text, option_a, option_b, option_c, option_d, 
-                   correct_option, image_path
+                   correct_option, image_data
             FROM questions 
             WHERE class_level = ? AND quiz_level = ? 
             ORDER BY id
@@ -68,7 +67,7 @@ public class QuizGameFrame extends JFrame {
             questions = new String[count];
             options = new String[count][4];
             correctAnswers = new int[count];
-            imagePaths = new String[count]; // ← inisialisasi
+            imageDatas = new byte[count][]; // ← inisialisasi
 
             int i = 0;
             while (rs.next()) {
@@ -87,7 +86,7 @@ public class QuizGameFrame extends JFrame {
                     default -> 0;
                 };
 
-                imagePaths[i] = rs.getString("image_path"); // ← simpan path
+                imageDatas[i] = rs.getBytes("image_data"); // ← simpan BLOB
                 i++;
             }
             return true;
@@ -108,17 +107,17 @@ public class QuizGameFrame extends JFrame {
         setLayout(new BorderLayout());
 
         // Tampilkan gambar jika ada
-        if (imagePaths[currentQuestionIndex] != null && !imagePaths[currentQuestionIndex].trim().isEmpty()) {
+        if (imageDatas[currentQuestionIndex] != null && imageDatas[currentQuestionIndex].length > 0) {
             try {
-                ImageIcon originalIcon = new ImageIcon(imagePaths[currentQuestionIndex]);
+                ImageIcon originalIcon = new ImageIcon(imageDatas[currentQuestionIndex]);
                 Image scaledImage = originalIcon.getImage().getScaledInstance(200, 150, Image.SCALE_SMOOTH);
                 JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
                 imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
                 imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
                 add(imageLabel, BorderLayout.NORTH);
             } catch (Exception e) {
-                System.err.println("Gagal memuat gambar: " + imagePaths[currentQuestionIndex]);
-                // Lanjut tanpa gambar
+                System.err.println("Gagal muat gambar dari BLOB: " + e.getMessage());
+                // lanjut tanpa gambar
             }
         }
 
@@ -202,7 +201,6 @@ public class QuizGameFrame extends JFrame {
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            // silent fail
         }
     }
 }
