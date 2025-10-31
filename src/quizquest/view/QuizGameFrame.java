@@ -71,7 +71,9 @@ public class QuizGameFrame extends JFrame {
         java.util.List<String> availableCategories = new java.util.ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql,
+                ResultSet.TYPE_SCROLL_INSENSITIVE,
+                ResultSet.CONCUR_READ_ONLY);) {
 
             stmt.setInt(1, className);
             stmt.setInt(2, level);
