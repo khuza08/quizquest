@@ -6,6 +6,8 @@ import quizquest.model.DatabaseConnection;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.*;
 import java.util.*;
 
@@ -25,10 +27,22 @@ public class QuizGameFrame extends JFrame {
     private int[] correctAnswers;
     private byte[][] imageDatas;
 
+    private JPanel contentPanel; // Store content panel as instance variable
+    private Point initialClick;
+
     public QuizGameFrame(int className, int level, String username) {
-        this.className = className;
-        this.level = level;
+        this.className = className; // ← ADD THIS LINE
+        this.level = level;         // ← ADD THIS LINE
         this.username = username;
+
+        // ✅ Initialize FlatLaf (like in HomePage)
+        try {
+            UIManager.setLookAndFeel("com.formdev.flatlaf.FlatLightLaf");
+            UIManager.put("Button.arc", 15);
+            UIManager.put("Component.arc", 15);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         // Reset daftar jika kelas/level berbeda
         if (lastClass != className || lastLevel != level) {
@@ -37,10 +51,38 @@ public class QuizGameFrame extends JFrame {
             lastLevel = level;
         }
 
-        setTitle("Kuis Kelas " + className + " - Level " + level);
+        setUndecorated(true); // ✅ Remove native title bar
         setSize(650, 500);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setBackground(new Color(0, 0, 0, 0));
+
+        // Main rounded panel
+        JPanel mainPanel = new RoundedPanel(32);
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(4, 2, 4, 2));
+
+        // === macOS Title Bar ===
+        JPanel titleBar = new JPanel(new BorderLayout());
+        titleBar.setOpaque(false);
+        titleBar.setPreferredSize(new Dimension(0, 40));
+        titleBar.setBorder(BorderFactory.createEmptyBorder(8, 15, 0, 15));
+
+        JPanel dotsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        dotsPanel.setOpaque(false);
+
+        JButton redDot = createMacOSDot(new Color(0xFF5F57), "Close");
+        JButton yellowDot = createMacOSDot(new Color(0xFFBD2E), "Minimize");
+        JButton greenDot = createMacOSDot(new Color(0x28CA42), "Maximize");
+
+        dotsPanel.add(redDot);
+        dotsPanel.add(yellowDot);
+        dotsPanel.add(greenDot);
+        titleBar.add(dotsPanel, BorderLayout.WEST);
+
+        // === Content Panel ===
+        contentPanel = new JPanel(new BorderLayout());
 
         selectedCategory = selectRandomCategory();
         if (selectedCategory == null) {
@@ -50,7 +92,11 @@ public class QuizGameFrame extends JFrame {
             return;
         }
 
-        setTitle("Kuis [" + selectedCategory + "] - Kelas " + className + " Level " + level);
+        // Update title bar with category info
+        JLabel titleLabel = new JLabel("Kuis [" + selectedCategory + "] - Kelas " + className + " Level " + level);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleBar.add(titleLabel, BorderLayout.CENTER);
 
         if (loadQuestionsFromDatabase()) {
             displayQuestion();
@@ -59,6 +105,15 @@ public class QuizGameFrame extends JFrame {
             dispose();
             navigateBack();
         }
+
+        // === Assembly ===
+        mainPanel.add(titleBar, BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        setContentPane(mainPanel);
+
+        // Draggable
+        makeDraggable(titleBar);
+        makeDraggable(contentPanel);
     }
 
     private String selectRandomCategory() {
@@ -175,14 +230,14 @@ public class QuizGameFrame extends JFrame {
             return;
         }
 
-        getContentPane().removeAll();
-        setLayout(new BorderLayout());
+        contentPanel.removeAll();
+        contentPanel.setLayout(new BorderLayout());
 
         JLabel categoryLabel = new JLabel("Kategori: " + selectedCategory);
         categoryLabel.setFont(new Font("Arial", Font.ITALIC, 12));
         categoryLabel.setHorizontalAlignment(SwingConstants.CENTER);
         categoryLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        add(categoryLabel, BorderLayout.NORTH);
+        contentPanel.add(categoryLabel, BorderLayout.NORTH);
 
         if (imageDatas[currentQuestionIndex] != null && imageDatas[currentQuestionIndex].length > 0) {
             try {
@@ -191,7 +246,7 @@ public class QuizGameFrame extends JFrame {
                 JLabel imageLabel = new JLabel(new ImageIcon(scaledImage));
                 imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
                 imageLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-                add(imageLabel, BorderLayout.CENTER);
+                contentPanel.add(imageLabel, BorderLayout.CENTER);
             } catch (Exception e) {
                 System.err.println("Gagal muat gambar dari BLOB: " + e.getMessage());
             }
@@ -200,7 +255,7 @@ public class QuizGameFrame extends JFrame {
         JLabel questionLabel = new JLabel((currentQuestionIndex + 1) + ". " + questions[currentQuestionIndex]);
         questionLabel.setFont(new Font("Arial", Font.BOLD, 16));
         questionLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(questionLabel, BorderLayout.SOUTH);
+        contentPanel.add(questionLabel, BorderLayout.SOUTH);
 
         JPanel optionsPanel = new JPanel(new GridLayout(4, 1, 5, 5));
         optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
@@ -215,9 +270,9 @@ public class QuizGameFrame extends JFrame {
             optionsPanel.add(optionBtn);
         }
 
-        add(optionsPanel, BorderLayout.EAST);
-        revalidate();
-        repaint();
+        contentPanel.add(optionsPanel, BorderLayout.EAST);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     private void checkAnswer(int selectedOption) {
@@ -233,7 +288,7 @@ public class QuizGameFrame extends JFrame {
         }
 
         currentQuestionIndex++;
-        displayQuestion();
+        displayQuestion(); // Now calls displayQuestion() without parameter
     }
 
     private void showResult() {
@@ -283,6 +338,78 @@ public class QuizGameFrame extends JFrame {
             new UserHomePage().setVisible(true);
         } else {
             new HomePage().setVisible(true);
+        }
+    }
+
+    // === Helper Methods (same as HomePage) ===
+
+    private JButton createMacOSDot(Color color, String action) {
+        JButton dot = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(color);
+                g2d.fillOval(0, 0, getWidth(), getHeight());
+                if (getModel().isRollover()) {
+                    g2d.setColor(new Color(0, 0, 0, 50));
+                    g2d.fillOval(0, 0, getWidth(), getHeight());
+                }
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+
+        dot.setPreferredSize(new Dimension(12, 12));
+        dot.setMaximumSize(new Dimension(12, 12));
+        dot.setContentAreaFilled(false);
+        dot.setBorderPainted(false);
+        dot.setFocusPainted(false);
+        dot.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        if ("Close".equals(action)) {
+            dot.addActionListener(e -> dispose());
+        } else if ("Minimize".equals(action)) {
+            dot.addActionListener(e -> setState(JFrame.ICONIFIED));
+        }
+
+        return dot;
+    }
+
+    private void makeDraggable(JComponent comp) {
+        comp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                initialClick = e.getPoint();
+            }
+        });
+        comp.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (initialClick != null) {
+                    setLocation(e.getXOnScreen() - initialClick.x, e.getYOnScreen() - initialClick.y);
+                }
+            }
+        });
+    }
+
+    private class RoundedPanel extends JPanel {
+        private int radius;
+        public RoundedPanel(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.setColor(new Color(220, 220, 220));
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+            g2.dispose();
+            super.paintComponent(g);
         }
     }
 }
