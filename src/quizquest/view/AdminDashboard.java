@@ -8,7 +8,6 @@ import quizquest.frames.ViewScoresFrame;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
 
 public class AdminDashboard extends JFrame {
     private JButton btnManageUsers, btnManageQuestions, btnViewScores, btnLogout;
@@ -39,7 +38,7 @@ public class AdminDashboard extends JFrame {
         JPanel titleBar = new JPanel(new BorderLayout());
         titleBar.setOpaque(false);
         titleBar.setPreferredSize(new Dimension(0, 40));
-        titleBar.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+        titleBar.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
 
         JPanel dotsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         dotsPanel.setOpaque(false);
@@ -54,53 +53,40 @@ public class AdminDashboard extends JFrame {
         titleBar.add(dotsPanel, BorderLayout.WEST);
 
         // === Content Panel ===
-        JPanel contentPanel = new JPanel(new GridBagLayout());
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setOpaque(false);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 40, 40));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(12, 0, 12, 0); // Increased spacing between buttons
-        gbc.gridx = 0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Title
         JLabel titleLabel = new JLabel("Admin Dashboard");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Color.BLACK);
-        gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.CENTER;
-        contentPanel.add(titleLabel, gbc);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(titleLabel);
 
-        // Spacer to push buttons down
-        gbc.gridy = 1;
-        gbc.weighty = 0.2;
-        contentPanel.add(Box.createVerticalGlue(), gbc);
+        // Spacer
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        // Buttons
-        btnManageUsers = createStyledButton("Kelola Siswa", 380, 60);
-        gbc.gridy = 2;
-        gbc.weighty = 0;
-        contentPanel.add(btnManageUsers, gbc);
+        // Create buttons and add them responsively
+        btnManageUsers = createStyledButton("Kelola Siswa", 60);
+        addResponsiveButton(contentPanel, btnManageUsers);
 
-        btnManageQuestions = createStyledButton("Kelola Soal", 380, 60);
-        gbc.gridy = 3;
-        contentPanel.add(btnManageQuestions, gbc);
+        btnManageQuestions = createStyledButton("Kelola Soal", 60);
+        addResponsiveButton(contentPanel, btnManageQuestions);
 
-        btnViewScores = createStyledButton("Lihat Nilai Siswa", 380, 60);
-        gbc.gridy = 4;
-        contentPanel.add(btnViewScores, gbc);
+        btnViewScores = createStyledButton("Lihat Nilai Siswa", 60);
+        addResponsiveButton(contentPanel, btnViewScores);
 
-        btnLogout = createStyledButton("Logout", 380, 60);
-        gbc.gridy = 5;
-        gbc.insets = new Insets(20, 0, 0, 0); // More top spacing for logout
-        contentPanel.add(btnLogout, gbc);
+        btnLogout = createStyledButton("Logout", 60);
+        addResponsiveButton(contentPanel, btnLogout);
 
         // === Assembly ===
         mainPanel.add(titleBar, BorderLayout.NORTH);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         setContentPane(mainPanel);
 
-        // Event handlers
+        // Event handlers - now the fields exist
         btnManageUsers.addActionListener(e -> new ManageUsersFrame().setVisible(true));
         btnManageQuestions.addActionListener(e -> new ManageQuestionsFrame().setVisible(true));
         btnViewScores.addActionListener(e -> new ViewScoresFrame().setVisible(true));
@@ -113,12 +99,10 @@ public class AdminDashboard extends JFrame {
                 JOptionPane.QUESTION_MESSAGE
             );
             if (confirm == JOptionPane.YES_OPTION) {
-                // Close ALL windows
                 Window[] windows = Window.getWindows();
                 for (Window window : windows) {
                     window.dispose();
                 }
-                // Open home page
                 new HomePage().setVisible(true);
             }
         });
@@ -128,7 +112,17 @@ public class AdminDashboard extends JFrame {
         makeDraggable(contentPanel);
     }
 
-    // === Helper Methods (same as LoginPage) ===
+    private void addResponsiveButton(JPanel parent, JButton button) {
+        // Create a panel for this button
+        JPanel buttonWrapper = new JPanel(new BorderLayout());
+        buttonWrapper.setOpaque(false);
+        buttonWrapper.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12)); // 12px left/right padding
+
+        buttonWrapper.add(button, BorderLayout.CENTER);
+        parent.add(buttonWrapper);
+    }
+
+    // === Helper Methods ===
 
     private JButton createMacOSDot(Color color, String action) {
         JButton dot = new JButton() {
@@ -147,8 +141,8 @@ public class AdminDashboard extends JFrame {
             }
         };
 
-        dot.setPreferredSize(new Dimension(16, 16));
-        dot.setMaximumSize(new Dimension(16, 16));
+        dot.setPreferredSize(new Dimension(14, 14));
+        dot.setMaximumSize(new Dimension(14, 14));
         dot.setContentAreaFilled(false);
         dot.setBorderPainted(false);
         dot.setFocusPainted(false);
@@ -164,7 +158,6 @@ public class AdminDashboard extends JFrame {
                     JOptionPane.QUESTION_MESSAGE
                 );
                 if (confirm == JOptionPane.YES_OPTION) {
-                    // Close ALL windows
                     Window[] windows = Window.getWindows();
                     for (Window window : windows) {
                         window.dispose();
@@ -179,7 +172,7 @@ public class AdminDashboard extends JFrame {
         return dot;
     }
 
-    private JButton createStyledButton(String text, int width, int height) {
+    private JButton createStyledButton(String text, int height) {
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -197,8 +190,8 @@ public class AdminDashboard extends JFrame {
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
-        btn.setPreferredSize(new Dimension(width, height));
-        btn.setMaximumSize(new Dimension(width, height));
+        btn.setPreferredSize(new Dimension(0, height)); // Let parent decide width
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, height)); // Allow stretching
 
         btn.addMouseListener(new MouseAdapter() {
             @Override

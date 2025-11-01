@@ -161,8 +161,8 @@ public class LoginPage extends JFrame {
             }
         };
 
-        dot.setPreferredSize(new Dimension(16, 16));
-        dot.setMaximumSize(new Dimension(16, 16));
+        dot.setPreferredSize(new Dimension(14, 14));
+        dot.setMaximumSize(new Dimension(14, 14));
         dot.setContentAreaFilled(false);
         dot.setBorderPainted(false);
         dot.setFocusPainted(false);
