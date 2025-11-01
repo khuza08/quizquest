@@ -228,7 +228,9 @@ public class ClassSelectionPage extends JFrame {
     }
 
     private void openLevelSelection(int className) {
-        new LevelSelectionPage(className, username).setVisible(true);
+        LevelSelectionPage frame = new LevelSelectionPage(className, username);
+        frame.setLocationRelativeTo(null); // ← Add this line
+        frame.setVisible(true);
         dispose();
     }
 }
