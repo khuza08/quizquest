@@ -6,45 +6,118 @@ import quizquest.model.DatabaseConnection;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.sql.*;
 
 public class LoginPage extends JFrame {
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnLogin, btnBack;
+    private Point initialClick;
 
     public LoginPage() {
-        setTitle("Login - Quiz Quest");
-        setSize(300, 230);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        try {
+            UIManager.setLookAndFeel("com.formdev.flatlaf.FlatLightLaf");
+            UIManager.put("Button.arc", 15);
+            UIManager.put("Component.arc", 15);
+            UIManager.put("TextComponent.arc", 15);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        setUndecorated(true);
+        setSize(400, 500);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setBackground(new Color(0, 0, 0, 0));
 
-        setLayout(new GridLayout(5, 1, 10, 10));
+        // Main rounded panel
+        JPanel mainPanel = new RoundedPanel(32);
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(4, 2, 4, 2));
 
-        add(new JLabel("Username:"));
-        txtUsername = new JTextField();
-        add(txtUsername);
+        // === macOS Title Bar ===
+        JPanel titleBar = new JPanel(new BorderLayout());
+        titleBar.setOpaque(false);
+        titleBar.setPreferredSize(new Dimension(0, 40));
+        titleBar.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
 
-        add(new JLabel("Password:"));
-        txtPassword = new JPasswordField();
-        add(txtPassword);
+        JPanel dotsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        dotsPanel.setOpaque(false);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
-        btnLogin = new JButton("Login");
-        btnBack = new JButton("Kembali");
+        JButton redDot = createMacOSDot(new Color(0xFF5F57), "Close");
+        JButton yellowDot = createMacOSDot(new Color(0xFFBD2E), "Minimize");
+        JButton greenDot = createMacOSDot(new Color(0x28CA42), "Maximize");
+
+        dotsPanel.add(redDot);
+        dotsPanel.add(yellowDot);
+        dotsPanel.add(greenDot);
+        titleBar.add(dotsPanel, BorderLayout.WEST);
+
+        // === Content Panel ===
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 30, 30));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 0, 8, 0);
+        gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Title
+        JLabel titleLabel = new JLabel("Login");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(Color.BLACK);
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        contentPanel.add(titleLabel, gbc);
+
+        // Username label + field
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        contentPanel.add(new JLabel("Username:"), gbc);
+
+        gbc.gridy = 2;
+        txtUsername = new JTextField(15);
+        txtUsername.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        contentPanel.add(txtUsername, gbc);
+
+        // Password label + field
+        gbc.gridy = 3;
+        contentPanel.add(new JLabel("Password:"), gbc);
+
+        gbc.gridy = 4;
+        txtPassword = new JPasswordField(15);
+        txtPassword.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        contentPanel.add(txtPassword, gbc);
+
+        // Button panel
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 15, 0));
+        buttonPanel.setOpaque(false);
+
+        btnLogin = createStyledButton("Login", 150, 50);
+        btnBack = createStyledButton("Kembali", 150, 50);
+
         buttonPanel.add(btnLogin);
         buttonPanel.add(btnBack);
-        add(buttonPanel);
+        gbc.gridy = 5;
+        gbc.insets = new Insets(20, 0, 0, 0);
+        contentPanel.add(buttonPanel, gbc);
 
-        // Tombol actions
+        // === Assembly ===
+        mainPanel.add(titleBar, BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        setContentPane(mainPanel);
+
+        // Actions
         btnLogin.addActionListener(e -> validateLogin());
         btnBack.addActionListener(e -> {
             dispose();
             new HomePage().setVisible(true);
         });
 
-        // === Key bindings ===
+        // Key bindings
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
             .put(KeyStroke.getKeyStroke("ENTER"), "login");
         getRootPane().getActionMap().put("login", new AbstractAction() {
@@ -54,7 +127,6 @@ public class LoginPage extends JFrame {
             }
         });
 
-        // Escape, Delete, Backspace → kembali
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
             .put(KeyStroke.getKeyStroke("ESCAPE"), "back");
         getRootPane().getActionMap().put("back", new AbstractAction() {
@@ -64,7 +136,120 @@ public class LoginPage extends JFrame {
                 new HomePage().setVisible(true);
             }
         });
+
+        // Draggable
+        makeDraggable(titleBar);
+        makeDraggable(contentPanel);
     }
+
+    // === Helper Methods (same as HomePage) ===
+
+    private JButton createMacOSDot(Color color, String action) {
+        JButton dot = new JButton() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(color);
+                g2d.fillOval(0, 0, getWidth(), getHeight());
+                if (getModel().isRollover()) {
+                    g2d.setColor(new Color(0, 0, 0, 50));
+                    g2d.fillOval(0, 0, getWidth(), getHeight());
+                }
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+
+        dot.setPreferredSize(new Dimension(16, 16));
+        dot.setMaximumSize(new Dimension(16, 16));
+        dot.setContentAreaFilled(false);
+        dot.setBorderPainted(false);
+        dot.setFocusPainted(false);
+        dot.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        if ("Close".equals(action)) {
+            dot.addActionListener(e -> dispose());
+        } else if ("Minimize".equals(action)) {
+            dot.addActionListener(e -> setState(JFrame.ICONIFIED));
+        }
+
+        return dot;
+    }
+
+    private JButton createStyledButton(String text, int width, int height) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g.create();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(0x2D2D2D));
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                g2d.dispose();
+                super.paintComponent(g);
+            }
+        };
+
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btn.setForeground(Color.WHITE);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(width, height));
+        btn.setMaximumSize(new Dimension(width, height));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(0x404040));
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(0x2D2D2D));
+            }
+        });
+
+        return btn;
+    }
+
+    private void makeDraggable(JComponent comp) {
+        comp.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                initialClick = e.getPoint();
+            }
+        });
+        comp.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (initialClick != null) {
+                    setLocation(e.getXOnScreen() - initialClick.x, e.getYOnScreen() - initialClick.y);
+                }
+            }
+        });
+    }
+
+    private class RoundedPanel extends JPanel {
+        private int radius;
+        public RoundedPanel(int radius) {
+            this.radius = radius;
+            setOpaque(false);
+        }
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.setColor(new Color(220, 220, 220));
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    // === Login Logic (unchanged) ===
 
     private void validateLogin() {
         String username = txtUsername.getText().trim();
