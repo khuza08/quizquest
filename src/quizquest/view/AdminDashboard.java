@@ -86,26 +86,41 @@ public class AdminDashboard extends JFrame {
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         setContentPane(mainPanel);
 
-        // Event handlers - now the fields exist
-        btnManageUsers.addActionListener(e -> new ManageUsersFrame().setVisible(true));
-        btnManageQuestions.addActionListener(e -> new ManageQuestionsFrame().setVisible(true));
-        btnViewScores.addActionListener(e -> new ViewScoresFrame().setVisible(true));
-        btnLogout.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Apakah Anda yakin ingin logout?",
-                "Konfirmasi Logout",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-            );
-            if (confirm == JOptionPane.YES_OPTION) {
-                Window[] windows = Window.getWindows();
-                for (Window window : windows) {
-                    window.dispose();
-                }
-                new HomePage().setVisible(true);
-            }
-        });
+// Event handlers - now the fields exist
+btnManageUsers.addActionListener(e -> {
+    ManageUsersFrame frame = new ManageUsersFrame();
+    frame.setLocationRelativeTo(null); // ← Add this line
+    frame.setVisible(true);
+});
+
+btnManageQuestions.addActionListener(e -> {
+    ManageQuestionsFrame frame = new ManageQuestionsFrame();
+    frame.setLocationRelativeTo(null); // ← Add this line
+    frame.setVisible(true);
+});
+
+btnViewScores.addActionListener(e -> {
+    ViewScoresFrame frame = new ViewScoresFrame();
+    frame.setLocationRelativeTo(null); // ← Add this line
+    frame.setVisible(true);
+});
+
+btnLogout.addActionListener(e -> {
+    int confirm = JOptionPane.showConfirmDialog(
+        this,
+        "Apakah Anda yakin ingin logout?",
+        "Konfirmasi Logout",
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.QUESTION_MESSAGE
+    );
+    if (confirm == JOptionPane.YES_OPTION) {
+        Window[] windows = Window.getWindows();
+        for (Window window : windows) {
+            window.dispose();
+        }
+        new HomePage().setVisible(true);
+    }
+});
 
         // Draggable
         makeDraggable(titleBar);
