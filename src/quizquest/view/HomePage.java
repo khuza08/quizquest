@@ -117,7 +117,7 @@ public class HomePage extends JFrame {
 
     private void openClassSelectionPage(String username) {
         ClassSelectionPage frame = new ClassSelectionPage(username);
-        frame.setLocationRelativeTo(null); // ← Add this line
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         dispose();
     }
