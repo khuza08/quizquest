@@ -55,9 +55,9 @@ public class ManageQuestionsFrame extends JFrame {
         JPanel titleBar = new JPanel(new BorderLayout());
         titleBar.setOpaque(false);
         titleBar.setPreferredSize(new Dimension(0, 40));
-        titleBar.setBorder(BorderFactory.createEmptyBorder(8, 15, 0, 15));
+        titleBar.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
 
-        JPanel dotsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        JPanel dotsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         dotsPanel.setOpaque(false);
 
         JButton redDot = createMacOSDot(new Color(0xFF5F57), "Close");
@@ -240,8 +240,8 @@ public class ManageQuestionsFrame extends JFrame {
             }
         };
 
-        dot.setPreferredSize(new Dimension(12, 12));
-        dot.setMaximumSize(new Dimension(12, 12));
+        dot.setPreferredSize(new Dimension(14, 14));
+        dot.setMaximumSize(new Dimension(14, 14));
         dot.setContentAreaFilled(false);
         dot.setBorderPainted(false);
         dot.setFocusPainted(false);
@@ -547,4 +547,4 @@ public class ManageQuestionsFrame extends JFrame {
         btnUpdate.setEnabled(false);
         btnDelete.setEnabled(false);
     }
-}   
+}           
